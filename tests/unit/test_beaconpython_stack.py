@@ -5,11 +5,19 @@ from beaconpython.beaconpython_stack import BeaconpythonStack
 
 # example tests. To run these tests, uncomment this file along with the example
 # resource in beaconpython/beaconpython_stack.py
-def test_sqs_queue_created():
+def test_opensearch_domain_created():
     app = core.App()
     stack = BeaconpythonStack(app, "beaconpython")
     template = assertions.Template.from_stack(stack)
 
-#     template.has_resource_properties("AWS::SQS::Queue", {
-#         "VisibilityTimeout": 300
-#     })
+    template.has_resource_properties(
+        "AWS::OpenSearchService::Domain",
+        {
+            "DomainName": "certification-assistant-search",
+            "EngineVersion": "OpenSearch_2.5",
+            "ClusterConfig": {
+                "InstanceType": "t3.small.search",
+                "InstanceCount": 1
+            }
+        },
+    )
