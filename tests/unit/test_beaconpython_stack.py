@@ -26,3 +26,18 @@ def test_opensearch_domain_created():
             }
         },
     )
+
+
+def test_ingest_lambda_created():
+    app = core.App()
+    stack = BeaconpythonStack(app, "beaconpython")
+    template = assertions.Template.from_stack(stack)
+
+    template.has_resource_properties(
+        "AWS::Lambda::Function",
+        {
+            "Handler": "index.handler",
+            "Runtime": "python3.12",
+            "FunctionName": "IngestFunction",
+        },
+    )
