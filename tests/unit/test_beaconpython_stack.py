@@ -13,7 +13,7 @@ def test_opensearch_domain_created():
     template.has_resource_properties(
         "AWS::OpenSearchService::Domain",
         {
-            "DomainName": "certification-assistant-search",
+            "DomainName": "cert-assistant-search",
             "EngineVersion": "OpenSearch_2.5",
             "ClusterConfig": {
                 "InstanceType": "t3.small.search",

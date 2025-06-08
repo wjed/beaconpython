@@ -1,6 +1,5 @@
 from aws_cdk import Aws, Stack, RemovalPolicy
 from aws_cdk import aws_s3 as s3
-from aws_cdk import aws_iam as iam
 from aws_cdk import aws_opensearchservice as opensearch
 from constructs import Construct
 
@@ -23,7 +22,7 @@ class BeaconpythonStack(Stack):
         opensearch.CfnDomain(
             self,
             "CertificationAssistantSearch",
-            domain_name="certification-assistant-search",
+            domain_name="cert-assistant-search",
             engine_version="OpenSearch_2.5",
             cluster_config=opensearch.CfnDomain.ClusterConfigProperty(
                 instance_type="t3.small.search",
