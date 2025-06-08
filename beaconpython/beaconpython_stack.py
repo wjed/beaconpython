@@ -48,21 +48,12 @@ class BeaconpythonStack(Stack):
             },
         ).apply_removal_policy(RemovalPolicy.DESTROY)
 
-        # Inline Lambda to process new uploads
-        ingest_function = _lambda.Function(
+        # Docker-based Lambda to process new uploads
+        ingest_function = _lambda.DockerImageFunction(
             self,
             "IngestFunction",
             function_name="IngestFunction",
-            runtime=_lambda.Runtime.PYTHON_3_12,
-            handler="index.handler",
-            code=_lambda.InlineCode(
-                "def handler(event, context):\n"
-                "    # Iterate over incoming records and log the S3 info\n"
-                "    for record in event.get('Records', []):\n"
-                "        bucket = record['s3']['bucket']['name']\n"
-                "        key = record['s3']['object']['key']\n"
-                "        print(f'New object: {key} in bucket: {bucket}')\n"
-            ),
+            code=_lambda.DockerImageCode.from_image_asset("lambda"),
         )
 
         # Allow the function to read from the materials bucket
