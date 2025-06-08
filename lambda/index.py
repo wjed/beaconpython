@@ -4,8 +4,24 @@ import urllib.parse
 import json
 import boto3
 import fitz  # PyMuPDF
+import requests
+from requests_aws4auth import AWS4Auth
 
 s3_client = boto3.client('s3')
+
+session = boto3.Session()
+credentials = session.get_credentials()
+region = session.region_name or os.environ.get("AWS_REGION", "us-east-1")
+awsauth = AWS4Auth(
+    credentials.access_key,
+    credentials.secret_key,
+    region,
+    "es",
+    session_token=credentials.token,
+)
+
+OPENSEARCH_ENDPOINT = os.environ.get("OPENSEARCH_ENDPOINT")
+INDEX_NAME = "cert-study-index"
 
 
 def handler(event, context):
@@ -34,5 +50,18 @@ def handler(event, context):
                 embedding = body.get("embedding", [])
 
                 # Log the length of the embedding vector and the first few values
-                print(f"Embedding length: {len(embedding)}; first values: {embedding[:5]}")
+                print(
+                    f"Embedding length: {len(embedding)}; first values: {embedding[:5]}"
+                )
+
+                if OPENSEARCH_ENDPOINT:
+                    doc_id = urllib.parse.quote(key, safe="")
+                    url = f"{OPENSEARCH_ENDPOINT}/{INDEX_NAME}/_doc/{doc_id}"
+                    payload = {"text": truncated, "embedding": embedding}
+                    headers = {"Content-Type": "application/json"}
+                    response = requests.put(url, auth=awsauth, json=payload, headers=headers)
+                    response.raise_for_status()
+                    print(
+                        f"Indexed {doc_id} into OpenSearch with status {response.status_code}"
+                    )
     return {'statusCode': 200}

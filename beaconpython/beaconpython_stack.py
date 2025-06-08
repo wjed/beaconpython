@@ -22,7 +22,7 @@ class BeaconpythonStack(Stack):
         )
 
         # OpenSearch domain for storing embeddings
-        opensearch.CfnDomain(
+        domain = opensearch.CfnDomain(
             self,
             "CertificationAssistantSearch",
             domain_name="cert-assistant-search",
@@ -47,7 +47,8 @@ class BeaconpythonStack(Stack):
                     }
                 ],
             },
-        ).apply_removal_policy(RemovalPolicy.DESTROY)
+        )
+        domain.apply_removal_policy(RemovalPolicy.DESTROY)
 
         # Docker-based Lambda to process new uploads
         ingest_function = _lambda.DockerImageFunction(
@@ -57,11 +58,24 @@ class BeaconpythonStack(Stack):
             code=_lambda.DockerImageCode.from_image_asset("lambda"),
         )
 
+        ingest_function.add_environment(
+            "OPENSEARCH_ENDPOINT", f"https://{domain.attr_domain_endpoint}"
+        )
+
         # Allow the function to call Amazon Bedrock for embeddings
         ingest_function.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["bedrock:InvokeModel"],
                 resources=["*"]
+            )
+        )
+
+        ingest_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["es:ESHttpPut"],
+                resources=[
+                    f"arn:aws:es:{Aws.REGION}:{Aws.ACCOUNT_ID}:domain/cert-assistant-search/*"
+                ],
             )
         )
 
