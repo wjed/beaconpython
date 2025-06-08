@@ -1,8 +1,5 @@
-from aws_cdk import (
-    # Duration,
-    Stack,
-    # aws_sqs as sqs,
-)
+from aws_cdk import Aws, Stack
+from aws_cdk import aws_s3 as s3
 from constructs import Construct
 
 class BeaconpythonStack(Stack):
@@ -10,10 +7,12 @@ class BeaconpythonStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # The code that defines your stack goes here
-
-        # example resource
-        # queue = sqs.Queue(
-        #     self, "BeaconpythonQueue",
-        #     visibility_timeout=Duration.seconds(300),
-        # )
+        # S3 bucket to store certification materials
+        # Bucket name includes the account ID for uniqueness
+        materials_bucket = s3.Bucket(
+            self,
+            "CertificationMaterialsBucket",
+            bucket_name=f"certification-materials-{Aws.ACCOUNT_ID}",
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            versioned=True,
+        )
