@@ -24,7 +24,51 @@ OPENSEARCH_ENDPOINT = os.environ.get("OPENSEARCH_ENDPOINT")
 INDEX_NAME = "cert-study-index"
 
 
+def ensure_index():
+    """Create the OpenSearch index with knn mapping if it doesn't exist."""
+    if not OPENSEARCH_ENDPOINT:
+        return
+
+    index_url = f"{OPENSEARCH_ENDPOINT}/{INDEX_NAME}"
+
+    try:
+        head_resp = requests.head(index_url, auth=awsauth)
+
+        if head_resp.status_code == 404:
+            mapping = {
+                "settings": {"index": {"knn": True}},
+                "mappings": {
+                    "properties": {
+                        "embedding": {
+                            "type": "knn_vector",
+                            "dimension": 1536,
+                            "method": {
+                                "engine": "faiss",
+                                "name": "hnsw",
+                                "space_type": "l2",
+                            },
+                        },
+                        "text": {"type": "text"},
+                    }
+                },
+            }
+
+            create_resp = requests.put(
+                index_url,
+                auth=awsauth,
+                json=mapping,
+                headers={"Content-Type": "application/json"},
+            )
+            create_resp.raise_for_status()
+            print(f"Created OpenSearch index {INDEX_NAME}")
+        elif head_resp.status_code != 200:
+            head_resp.raise_for_status()
+    except Exception as e:
+        print(f"Error ensuring index: {e}")
+
+
 def handler(event, context):
+    ensure_index()
     for record in event.get('Records', []):
         bucket = record['s3']['bucket']['name']
         key = urllib.parse.unquote_plus(record['s3']['object']['key'])
