@@ -18,6 +18,11 @@ def test_opensearch_domain_created():
             "ClusterConfig": {
                 "InstanceType": "t3.small.search",
                 "InstanceCount": 1
+            },
+            "EBSOptions": {
+                "EBSEnabled": True,
+                "VolumeSize": 10,
+                "VolumeType": "gp3"
             }
         },
     )

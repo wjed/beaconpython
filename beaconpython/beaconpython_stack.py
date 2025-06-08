@@ -28,6 +28,11 @@ class BeaconpythonStack(Stack):
                 instance_type="t3.small.search",
                 instance_count=1,
             ),
+            ebs_options=opensearch.CfnDomain.EBSOptionsProperty(
+                ebs_enabled=True,
+                volume_size=10,
+                volume_type="gp3",
+            ),
             access_policies={
                 "Version": "2012-10-17",
                 "Statement": [
