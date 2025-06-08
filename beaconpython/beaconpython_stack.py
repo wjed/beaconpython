@@ -1,5 +1,7 @@
 from aws_cdk import Aws, Stack, RemovalPolicy
 from aws_cdk import aws_s3 as s3
+from aws_cdk import aws_lambda as _lambda
+from aws_cdk import aws_s3_notifications as s3n
 from aws_cdk import aws_opensearchservice as opensearch
 from constructs import Construct
 
@@ -45,3 +47,30 @@ class BeaconpythonStack(Stack):
                 ],
             },
         ).apply_removal_policy(RemovalPolicy.DESTROY)
+
+        # Inline Lambda to process new uploads
+        ingest_function = _lambda.Function(
+            self,
+            "IngestFunction",
+            function_name="IngestFunction",
+            runtime=_lambda.Runtime.PYTHON_3_12,
+            handler="index.handler",
+            code=_lambda.InlineCode(
+                "def handler(event, context):\n"
+                "    # Iterate over incoming records and log the S3 info\n"
+                "    for record in event.get('Records', []):\n"
+                "        bucket = record['s3']['bucket']['name']\n"
+                "        key = record['s3']['object']['key']\n"
+                "        print(f'New object: {key} in bucket: {bucket}')\n"
+            ),
+        )
+
+        # Allow the function to read from the materials bucket
+        materials_bucket.grant_read(ingest_function)
+
+        # Trigger the function when new objects are created
+        materials_bucket.add_event_notification(
+            s3.EventType.OBJECT_CREATED,
+            s3n.LambdaDestination(ingest_function),
+        )
+
