@@ -36,8 +36,7 @@ def test_ingest_lambda_created():
     template.has_resource_properties(
         "AWS::Lambda::Function",
         {
-            "Handler": "index.handler",
-            "Runtime": "python3.12",
+            "PackageType": "Image",
             "FunctionName": "IngestFunction",
         },
     )
