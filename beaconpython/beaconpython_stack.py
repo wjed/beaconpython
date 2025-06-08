@@ -38,7 +38,7 @@ class BeaconpythonStack(Stack):
                 "Statement": [
                     {
                         "Effect": "Allow",
-                        "Principal": {"AWS": "*"},
+                        "Principal": {"AWS": f"arn:aws:iam::{Aws.ACCOUNT_ID}:root"},
                         "Action": "es:*",
                         "Resource": "*",
                     }
