@@ -56,12 +56,27 @@ class BeaconpythonStack(Stack):
             runtime=_lambda.Runtime.PYTHON_3_12,
             handler="index.handler",
             code=_lambda.InlineCode(
+                "import boto3\n"
+                "import logging\n"
+                "import fitz\n"
+                "\n"
+                "s3 = boto3.client('s3')\n"
+                "logger = logging.getLogger()\n"
+                "logger.setLevel(logging.INFO)\n"
+                "\n"
                 "def handler(event, context):\n"
-                "    # Iterate over incoming records and log the S3 info\n"
                 "    for record in event.get('Records', []):\n"
                 "        bucket = record['s3']['bucket']['name']\n"
                 "        key = record['s3']['object']['key']\n"
-                "        print(f'New object: {key} in bucket: {bucket}')\n"
+                "        logger.info(f'New object: {key} in bucket: {bucket}')\n"
+                "        obj = s3.get_object(Bucket=bucket, Key=key)\n"
+                "        data = obj['Body'].read()\n"
+                "        if key.lower().endswith('.pdf'):\n"
+                "            doc = fitz.open(stream=data, filetype='pdf')\n"
+                "            text = ''.join(page.get_text() for page in doc)\n"
+                "            logger.info('Extracted text: %s', text[:1000])\n"
+                "        else:\n"
+                "            logger.info('Unsupported file type for key %s', key)\n"
             ),
         )
 
