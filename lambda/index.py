@@ -1,6 +1,7 @@
 import os
 import tempfile
 import urllib.parse
+import json
 import boto3
 import fitz  # PyMuPDF
 
@@ -16,5 +17,22 @@ def handler(event, context):
             s3_client.download_file(bucket, key, local_path)
             with fitz.open(local_path) as doc:
                 text = "".join(page.get_text() for page in doc)
-                print(text)
+
+                # Truncate the extracted text to 8192 characters
+                truncated = text[:8192]
+
+                # Invoke the Amazon Titan embedding model via Bedrock
+                bedrock = boto3.client("bedrock-runtime")
+                response = bedrock.invoke_model(
+                    modelId="amazon.titan-embed-text-v1",
+                    contentType="application/json",
+                    accept="application/json",
+                    body=json.dumps({"inputText": truncated}),
+                )
+
+                body = json.loads(response["body"].read())
+                embedding = body.get("embedding", [])
+
+                # Log the length of the embedding vector and the first few values
+                print(f"Embedding length: {len(embedding)}; first values: {embedding[:5]}")
     return {'statusCode': 200}

@@ -3,6 +3,7 @@ from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_lambda as _lambda
 from aws_cdk import aws_s3_notifications as s3n
 from aws_cdk import aws_opensearchservice as opensearch
+from aws_cdk import aws_iam as iam
 from constructs import Construct
 
 class BeaconpythonStack(Stack):
@@ -54,6 +55,14 @@ class BeaconpythonStack(Stack):
             "IngestFunction",
             function_name="IngestFunction",
             code=_lambda.DockerImageCode.from_image_asset("lambda"),
+        )
+
+        # Allow the function to call Amazon Bedrock for embeddings
+        ingest_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["bedrock:InvokeModel"],
+                resources=["*"]
+            )
         )
 
         # Allow the function to read from the materials bucket
