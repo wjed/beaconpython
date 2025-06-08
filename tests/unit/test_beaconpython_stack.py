@@ -40,3 +40,17 @@ def test_ingest_lambda_created():
             "FunctionName": "IngestFunction",
         },
     )
+
+
+def test_query_lambda_created():
+    app = core.App()
+    stack = BeaconpythonStack(app, "beaconpython")
+    template = assertions.Template.from_stack(stack)
+
+    template.has_resource_properties(
+        "AWS::Lambda::Function",
+        {
+            "PackageType": "Image",
+            "FunctionName": "QueryFunction",
+        },
+    )

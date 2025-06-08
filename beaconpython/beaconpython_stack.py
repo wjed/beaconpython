@@ -88,3 +88,29 @@ class BeaconpythonStack(Stack):
             s3n.LambdaDestination(ingest_function),
         )
 
+        # Lambda to query OpenSearch using embeddings
+        query_function = _lambda.DockerImageFunction(
+            self,
+            "QueryFunction",
+            function_name="QueryFunction",
+            code=_lambda.DockerImageCode.from_image_asset("query_lambda"),
+        )
+
+        query_function.add_environment(
+            "OPENSEARCH_ENDPOINT", f"https://{domain.attr_domain_endpoint}"
+        )
+
+        query_function.add_to_role_policy(
+            iam.PolicyStatement(actions=["bedrock:InvokeModel"], resources=["*"])
+        )
+
+        query_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["es:ESHttpPost"],
+                resources=[
+                    f"arn:aws:es:{Aws.REGION}:{Aws.ACCOUNT_ID}:domain/cert-assistant-search/*"
+                ],
+            )
+        )
+
+
