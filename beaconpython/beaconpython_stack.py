@@ -4,6 +4,7 @@ from aws_cdk import aws_lambda as _lambda
 from aws_cdk import aws_s3_notifications as s3n
 from aws_cdk import aws_opensearchservice as opensearch
 from aws_cdk import aws_iam as iam
+from aws_cdk import aws_apigateway as apigateway
 from constructs import Construct
 
 class BeaconpythonStack(Stack):
@@ -87,4 +88,37 @@ class BeaconpythonStack(Stack):
             s3.EventType.OBJECT_CREATED,
             s3n.LambdaDestination(ingest_function),
         )
+
+        # Docker-based Lambda to handle search queries
+        search_function = _lambda.DockerImageFunction(
+            self,
+            "SearchFunction",
+            function_name="SearchFunction",
+            code=_lambda.DockerImageCode.from_image_asset(
+                "lambda",
+                cmd=["search_function.handler"],
+            ),
+            environment={
+                "OPENSEARCH_ENDPOINT": f"https://{domain.attr_domain_endpoint}"
+            },
+        )
+
+        # Permissions for Bedrock and OpenSearch
+        search_function.add_to_role_policy(
+            iam.PolicyStatement(actions=["bedrock:InvokeModel"], resources=["*"])
+        )
+        search_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["es:ESHttpPost", "es:ESHttpGet"],
+                resources=[
+                    f"arn:aws:es:{Aws.REGION}:{Aws.ACCOUNT_ID}:domain/cert-assistant-search/*"
+                ],
+            )
+        )
+
+        # API Gateway exposing the search endpoint
+        api = apigateway.RestApi(self, "StudyAssistantApi")
+        search_integration = apigateway.LambdaIntegration(search_function)
+        search_resource = api.root.add_resource("search")
+        search_resource.add_method("POST", search_integration)
 
