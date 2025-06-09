@@ -4,6 +4,6 @@ FROM amazon/aws-lambda-python:3.12
 RUN pip install PyMuPDF requests requests_aws4auth
 
 # Copy function code
-COPY index.py ${LAMBDA_TASK_ROOT}
+COPY index.py search_function.py ${LAMBDA_TASK_ROOT}
 
 CMD ["index.handler"]
