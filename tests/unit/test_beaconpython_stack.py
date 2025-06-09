@@ -40,3 +40,32 @@ def test_ingest_lambda_created():
             "FunctionName": "IngestFunction",
         },
     )
+
+
+def test_search_lambda_created():
+    app = core.App()
+    stack = BeaconpythonStack(app, "beaconpython")
+    template = assertions.Template.from_stack(stack)
+
+    template.has_resource_properties(
+        "AWS::Lambda::Function",
+        {
+            "PackageType": "Image",
+            "FunctionName": "SearchFunction",
+        },
+    )
+    template.has_resource_properties(
+        "AWS::Lambda::Function",
+        {
+            "FunctionName": "SearchFunction",
+            "VpcConfig": assertions.Match.absent(),
+        },
+    )
+
+
+def test_api_gateway_created():
+    app = core.App()
+    stack = BeaconpythonStack(app, "beaconpython")
+    template = assertions.Template.from_stack(stack)
+
+    template.resource_count_is("AWS::ApiGateway::RestApi", 1)
